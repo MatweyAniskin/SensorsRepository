@@ -1,0 +1,7 @@
+TestTaskApi/.vc/
+TestTaskApi/TestResults/
+TestTaskApi/bin/
+TestTaskApi/obj/
+UnitTests/bin/
+UnitTests/obj/
+test_task_front/node_modules/
