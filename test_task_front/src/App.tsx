@@ -1,13 +1,18 @@
-import React from 'react';
-import logo from './logo.svg';
+import { Router, Routes, Route, Link, BrowserRouter } from 'react-router-dom';
 import './App.css';
-import SensorsMap from './components/map';
-import { useSensors } from './components/sensors_provider';
+import { siteConfig } from './config/site_config';
+import Navigation from './components/navigation';
+
 function App() {
-  const {sensors} = useSensors()
   return (
     <div className="App">
-      <SensorsMap sensors={sensors}/>
+      <BrowserRouter>
+        <Navigation/>
+        <Routes>
+          <Route path={siteConfig.Links.MapPage.href} element={siteConfig.Links.MapPage.component} />
+           <Route path={siteConfig.Links.LoadPage.href} element={siteConfig.Links.LoadPage.component} />
+        </Routes>
+      </BrowserRouter>
     </div>
   );
 }

@@ -4,16 +4,18 @@ import useSWR from "swr";
 import { getSensorsFetchEndPoint, getSensorsFetch } from "../api/get_sensots_fetch";
 
 interface SensorsContextType {
-    sensors: SensorMinDto[]
+    sensors: SensorMinDto[],
+    sensorsMutate: () => void
 }
 const SensorsContext = createContext<SensorsContextType | undefined>(undefined)
 
 const SensorsProvider: React.FC<{children: React.ReactNode}> = ({children}) =>{
   
-    const {data:sensorsData} = useSWR(getSensorsFetchEndPoint,getSensorsFetch)
+    const {data:sensorsData, mutate} = useSWR(getSensorsFetchEndPoint,getSensorsFetch)
     const sensors = sensorsData ?? []
+    const sensorsMutate = () => mutate()
     return(
-        <SensorsContext.Provider value={{sensors}}>
+        <SensorsContext.Provider value={{sensors,sensorsMutate}}>
             {children}
         </SensorsContext.Provider>
     )
