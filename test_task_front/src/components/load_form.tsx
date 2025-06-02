@@ -4,14 +4,14 @@ import { postSensorsFetch } from '../api/post_sensors_fetch'
 import { Modal, Button } from 'react-bootstrap';
 import { useSensors } from './sensors_provider';
 const LoadForm = () => {
-    const {sensorsMutate} = useSensors()
+    const { sensorsMutate } = useSensors()
 
     const [file, setFile] = useState(null)
     const [error, setError] = useState('')
     const [showSuccessModal, setShowSuccessModal] = useState(false)
-
+    const [isLoading, setIsLoading] = useState(false)
     const handleFileChange = (event: any) => {
-        const selectedFile = event.target.files[0]      
+        const selectedFile = event.target.files[0]
         if (selectedFile && (selectedFile.type === 'text/csv' || selectedFile.type === "application/vnd.ms-excel")) {
             setFile(selectedFile)
             setError('')
@@ -22,18 +22,21 @@ const LoadForm = () => {
     }
 
     const handleSubmit = async (event: any) => {
+        setIsLoading(true)
         event.preventDefault()
         if (file) {
-            if (await postSensorsFetch(file)) {
-                setShowSuccessModal(true)
-                sensorsMutate()
-            }
 
+            if (await postSensorsFetch(file)) {  
+                                             
+                await sensorsMutate()
+                setShowSuccessModal(true)
+            }
             else
                 setError('Файл не необработан')
         } else {
             setError('Файл не выбран')
         }
+         setIsLoading(false)
     }
     const handleClose = () => {
         setShowSuccessModal(false)
@@ -54,10 +57,13 @@ const LoadForm = () => {
                         onChange={handleFileChange}
                     />
                     {error && <div className="invalid-feedback">{error}</div>}
+                    {isLoading && <div className='text-warning'>Загрузка данных...</div>}
                 </div>
-                <Button type="submit" className="btn btn-primary my-3">
+                 {!isLoading && 
+                 <Button type="submit" className="btn btn-primary my-3">
                     Загрузить файл
-                </Button>
+                </Button>}
+                
             </form>
             <Modal show={showSuccessModal} onHide={handleClose}>
                 <Modal.Header closeButton>

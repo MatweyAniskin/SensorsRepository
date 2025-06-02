@@ -7,7 +7,7 @@ const MapSensorPopup = ({
     sensorName:string
     sensorValues:number[]
 }) => {
-    const sensorsValuesMin = sensorValues.reverse().slice(0,3)
+    const sensorsValuesMin = sensorValues.slice(0,3)
     return (
         <>
             <Popup>

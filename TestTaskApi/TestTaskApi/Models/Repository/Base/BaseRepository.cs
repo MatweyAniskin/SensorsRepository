@@ -2,6 +2,7 @@
 
 using MongoDB.Bson.Serialization.Attributes;
 using MongoDB.Driver;
+using MongoDB.Driver.GridFS;
 using TestTaskApi.DataBase;
 using TestTaskApi.Models.Repository.Reflection;
 
@@ -11,17 +12,16 @@ namespace TestTaskApi.Models.Repository.Base
     //Обобщенный репозиторий для монго
     public abstract class BaseRepository<T, Tid> : IRepository<T, Tid> where T : class
     {
-
         protected readonly string _collectionName;
         protected readonly string _idFieldName;      
         protected readonly IMongoDatabase _dataBase;
-        protected readonly IMongoCollection<T> _collection;
+        protected readonly IMongoCollection<T> _collection;    
         public BaseRepository(IMongoDb mongoDb)
         {
             _idFieldName = GetIdFieldName();
             _collectionName = GetCollectionName();
             _dataBase = mongoDb.Database;
-            _collection = _dataBase.GetCollection<T>(_collectionName);            
+            _collection = _dataBase.GetCollection<T>(_collectionName);          
         }
         //Для объявления названия коллекции использую собственные атрибуты
         protected virtual string GetCollectionName()
@@ -44,23 +44,23 @@ namespace TestTaskApi.Models.Repository.Base
             throw new InvalidOperationException($"No BsonId property found in type {type.Name}");
         }
             
-        public async Task<IEnumerable<T>> GetAllAsync()
+        public virtual async Task<IEnumerable<T>> GetAllAsync()
         {
             return await _collection.Find(Builders<T>.Filter.Empty).ToListAsync();
         }
 
-        public async Task<T> GetByIdAsync(Tid id)
+        public virtual async Task<T> GetByIdAsync(Tid id)
         {
             var filter = Builders<T>.Filter.Eq(_idFieldName, id);
             return await _collection.Find(filter).FirstOrDefaultAsync();
         }
 
-        public async Task AddAsync(T entity)
+        public virtual async Task AddAsync(T entity)
         {
             await _collection.InsertOneAsync(entity);
         }
 
-        public void Update(T entity)
+        public virtual void Update(T entity)
         {
             var type = typeof(T);
             var idProperty = type.GetProperties()
@@ -75,12 +75,12 @@ namespace TestTaskApi.Models.Repository.Base
             _collection.ReplaceOne(filter, entity);
         }
 
-        public async Task DeleteByIdAsync(Tid id)
+        public virtual async Task DeleteByIdAsync(Tid id)
         {
             var filter = Builders<T>.Filter.Eq(_idFieldName, id);
             await _collection.DeleteOneAsync(filter);
         }   
-        public async Task ClearAsync()
+        public virtual async Task ClearAsync()
         {
             await _collection.DeleteManyAsync(Builders<T>.Filter.Empty);
         }

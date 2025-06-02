@@ -4,11 +4,15 @@ using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
+using System.Threading.Tasks;
 using TestTaskApi.Controllers;
+using TestTaskApi.DataBase;
 using TestTaskApi.Models.Data;
+using TestTaskApi.Models.Mapping;
 using TestTaskApi.Models.Repository.Variations.SensorRepository;
 using TestTaskApi.Models.Transfer;
 using TestTaskApi.Parser.Service;
+using TestTaskApi.Parser.Variation;
 
 namespace UnitTests
 {
@@ -16,22 +20,51 @@ namespace UnitTests
     public class SensorControllerTest
     {
         private SensorController _controller;
-        private Mock<ISensorRepository> _mockSensorRepository;
-        private Mock<IParserService> _mockParserService;
-        private Mock<IMapper> _mockMapper;
+        private  ISensorRepository _sensorRepository; 
+        private IParserService _parser; 
+        private IMapper _mapper;
+        private IMongoDb _mongoDb;
+        private IFormFile MockFile
+        {
+            get
+            {
+                var content = "DateTime;SensorName;CustomerName;Flags;SensorType;Unit;East;North;Height;km;VALUE1;VALUE2\n28.06.2022 15:30:31;TurbineMonitoring:DH_HS5_HS2_E2_comp;;;HydrostaticLevel;Hectopascal;0.0000;0.0000;0.0000;0.0000;0.0;15.0";
+                var fileMock = new Mock<IFormFile>();
 
+                var byteArray = System.Text.Encoding.UTF8.GetBytes(content);
+                var stream = new MemoryStream(byteArray);
+
+                fileMock.Setup(f => f.OpenReadStream()).Returns(stream);
+                fileMock.Setup(f => f.Length).Returns(stream.Length);
+                fileMock.Setup(f => f.ContentType).Returns("test/csv");
+                fileMock.Setup(f => f.FileName).Returns("test.csv");
+                return fileMock.Object;
+            }
+        }
+        
         [TestInitialize]
         public void Setup()
         {
-            _mockSensorRepository = new Mock<ISensorRepository>();
-            _mockMapper = new Mock<IMapper>();
-            _mockParserService = new Mock<IParserService>();
+            _mongoDb = new MongoDbService("mongodb://localhost/UnitTest");
+            _sensorRepository = new SensorRepository(_mongoDb);
+
+            _sensorRepository.ClearAsync().GetAwaiter().GetResult(); 
+
+            var mapperConfig = new MapperConfiguration(cfg =>
+            {
+                cfg.AddProfile<AutoMapperProfile>();
+            });
+            _mapper = mapperConfig.CreateMapper();
+            
+            _parser = new OneEntityParserService();
             _controller = new SensorController(
-                _mockSensorRepository.Object,
-                _mockParserService.Object,
-                _mockMapper.Object
+                _sensorRepository,
+                _parser,
+               _mapper
                 );
         }
+        
+       
         [TestMethod]
         public async Task LoadData_500_WhenNull()
         {
@@ -51,64 +84,15 @@ namespace UnitTests
         }
         [TestMethod]
         public async Task LoadData_204_WhenFileIsValid()
-        {
-        
-            var fileMock = new Mock<IFormFile>();
-            var content = "DateTime;SensorName;CustomerName;Flags;SensorType;Unit;East;North;Height;km;VALUE1;VALUE2\n28.06.2022 15:30:31;TurbineMonitoring:DH_HS5_HS2_E2_comp;;;HydrostaticLevel;Hectopascal;0.0000;0.0000;0.0000;0.0000;0.0;15.0";
-
-            var sensor = new Sensor
-            {
-                DateTime = new string[] { "28.06.2022 15:30:31" },
-                SensorName = "TurbineMonitoring:DH_HS5_HS2_E2_comp",
-                CustomerName = "",
-                Flags = "",
-                SensorType = "HydrostaticLevel",
-                Unit = "Hectopascal",
-                East = 0,
-                North = 0,
-                Height = 0,
-                Km = 0,
-                Values1 = new double[] { 0 },
-                Values2 = new double[] { 15 },
-            };
-
-            var byteArray = System.Text.Encoding.UTF8.GetBytes(content);
-            var stream = new MemoryStream(byteArray);
-
-            fileMock.Setup(f => f.OpenReadStream()).Returns(stream);
-            fileMock.Setup(f => f.Length).Returns(stream.Length);
-            fileMock.Setup(f => f.ContentType).Returns("test/csv");
-            fileMock.Setup(f => f.FileName).Returns("test.csv");
-
-            _mockParserService.Setup(p => p.ParseAsync<Sensor>(content)).ReturnsAsync(sensor);
-            _mockSensorRepository.Setup(repo => repo.AddAsync(It.IsAny<Sensor>())).Returns(Task.CompletedTask);
-
-            var result = await _controller.LoadSensorData(fileMock.Object);
+        {                             
+            var result = await _controller.LoadSensorData(MockFile);
 
             Assert.IsInstanceOfType(result, typeof(CreatedResult));
         }
         [TestMethod]
         public async Task GetAllSensors_200_ReturnDto()
         {
-            
-            var sensors = new List<Sensor>
-            {
-                new Sensor
-                {
-                DateTime = new string[] { "28.06.2022 15:30:31" },
-                SensorName = "TurbineMonitoring:DH_HS5_HS2_E2_comp",
-                CustomerName = "",
-                Flags = "",
-                SensorType = "HydrostaticLevel",
-                Unit = "Hectopascal",
-                East = 0,
-                North = 0,
-                Height = 0,
-                Km = 0,
-                Values1 = new double[] { 0 },
-                Values2 = new double[] { 15 },
-            }
-            };
+                        
             var sensorDtos = new List<SensorLocationMinDto>
             {
                 new SensorLocationMinDto
@@ -119,14 +103,25 @@ namespace UnitTests
                     Values = new double[] { 0 },
                 }
             };
-            _mockSensorRepository.Setup(s => s.GetAllAsync()).ReturnsAsync(sensors);
-            _mockMapper.Setup(m => m.Map<IEnumerable<SensorLocationMinDto>>(sensors)).Returns(sensorDtos);
 
+            await _controller.LoadSensorData(MockFile);
 
-            var result = await _controller.GetAllSensors() as IEnumerable<SensorLocationMinDto>;
-           
+            await Task.Delay(1000);
+
+            var result = await _controller.GetAllSensors() as IEnumerable<SensorLocationMinDto>;            
+            
             Assert.IsNotNull(result);
-            Assert.AreEqual(sensorDtos.Count, result.Count());
-        }
+            var resultList = result.ToList();
+
+            Assert.AreEqual(sensorDtos.Count, resultList.Count, "Dto count not equal");
+
+            for (int i = 0; i < sensorDtos.Count; i++)
+            {
+                Assert.AreEqual(sensorDtos[i].Sensor_name, resultList[i].Sensor_name, $"Sensor_name not equal on position {i}.");
+                Assert.AreEqual(sensorDtos[i].North, resultList[i].North, $"North not equal on position {i}.");
+                Assert.AreEqual(sensorDtos[i].East, resultList[i].East, $"East not equal on position {i}.");              
+                CollectionAssert.AreEqual(sensorDtos[i].Values, resultList[i].Values, $"Values not equal on position {i}.");
+            }
+        }       
     }
 }

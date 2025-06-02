@@ -5,7 +5,7 @@ import { getSensorsFetchEndPoint, getSensorsFetch } from "../api/get_sensots_fet
 
 interface SensorsContextType {
     sensors: SensorMinDto[],
-    sensorsMutate: () => void
+    sensorsMutate: () => Promise<any>
 }
 const SensorsContext = createContext<SensorsContextType | undefined>(undefined)
 
@@ -13,7 +13,10 @@ const SensorsProvider: React.FC<{children: React.ReactNode}> = ({children}) =>{
   
     const {data:sensorsData, mutate} = useSWR(getSensorsFetchEndPoint,getSensorsFetch)
     const sensors = sensorsData ?? []
-    const sensorsMutate = () => mutate()
+    const sensorsMutate = async () =>{
+        await new Promise(resolve => setTimeout(resolve, 1000)); 
+        await mutate()
+    } 
     return(
         <SensorsContext.Provider value={{sensors,sensorsMutate}}>
             {children}

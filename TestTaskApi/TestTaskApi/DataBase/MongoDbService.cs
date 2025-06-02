@@ -10,14 +10,15 @@ namespace TestTaskApi.DataBase
 
         public IMongoDatabase Database => _database;
 
-        public MongoDbService(IConfiguration configuration)
+        public MongoDbService(IConfiguration configuration) : this(configuration.GetConnectionString("MongoConnection"))
         {
-            _configuration = configuration;
-
-            var connectionString = _configuration.GetConnectionString("MongoConnection");
+            
+        }
+        public MongoDbService(string connectionString)
+        {            
             var mongoUrl = MongoUrl.Create(connectionString);
             var mongoClient = new MongoClient(mongoUrl);
             _database = mongoClient.GetDatabase(mongoUrl.DatabaseName);
-        }        
+        }
     }
 }

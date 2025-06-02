@@ -29,7 +29,7 @@ namespace TestTaskApi.Controllers
         [HttpPost("UploadSensorData")]
         [DisableRequestSizeLimit]
         public async Task<IActionResult> LoadSensorData(IFormFile file)
-        {
+        {            
             if (file == null || file.Length == 0) //проверка на пустой файл
             {
                 return BadRequest("Empty file uploaded.");

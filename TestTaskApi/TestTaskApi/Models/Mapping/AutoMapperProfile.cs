@@ -10,7 +10,7 @@ namespace TestTaskApi.Models.Mapping
         {
             CreateMap<Sensor, SensorLocationMinDto>()
                 .ForMember(dest => dest.Sensor_name, opt => opt.MapFrom(src => src.SensorName))
-                .ForMember(dest => dest.Values, opt => opt.MapFrom(src => src.Values1));
+                .ForMember(dest => dest.Values, opt => opt.MapFrom(src => src.Values1.TakeLast(15)));
         }
     }
 }
