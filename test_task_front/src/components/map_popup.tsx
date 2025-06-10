@@ -1,22 +1,19 @@
 import { Popup } from "react-leaflet"
+import SensorMinDto from "../interfaces/sensor_min_dto"
 
 const MapSensorPopup = ({
-    sensorName,
-    sensorValues
+   sensor
 }: {
-    sensorName:string
-    sensorValues:number[]
+   sensor:SensorMinDto
 }) => {
-    const sensorsValuesMin = sensorValues.slice(0,3)
+   
     return (
         <>
             <Popup>
-                <p>{`Название сенсора: ${sensorName}`}</p>
-                {
-                    sensorsValuesMin.map((i,k) => (
-                        <p key={k}>{`Данные ${k+1}: ${i}`}</p>
-                    ))
-                }
+                <p>{`Название сенсора: ${sensor.sensor_name}`}</p>
+                <p>{`Последние измерения`}</p>
+                <p>{`Данные 1: ${sensor.value1}, Данные 2: ${sensor.value2}`}</p>
+                <p>{`Всего измерений: ${sensor.value_count}`}</p>
             </Popup>
         </>
     )

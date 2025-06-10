@@ -1,13 +1,8 @@
 ﻿namespace TestTaskApi.Models.Repository.Base
 {
-    public interface IRepository<T,TId>
+    public interface IRepository<T> where T : class
     {
-        Task<IEnumerable<T>> GetAllAsync();
-        Task<T> GetByIdAsync(TId id);
-        Task AddAsync(T entity);
-        void Update(T entity);
-        Task DeleteByIdAsync(TId id);
-       
+        Task AddMany(IEnumerable<T> entities);
         Task ClearAsync();
     }
 }

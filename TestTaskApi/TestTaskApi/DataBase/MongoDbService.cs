@@ -2,7 +2,7 @@
 
 namespace TestTaskApi.DataBase
 {
-    //сервис для получения монго бд
+    //Service for using mongo db
     public class MongoDbService : IMongoDb
     {
         private readonly IConfiguration _configuration;

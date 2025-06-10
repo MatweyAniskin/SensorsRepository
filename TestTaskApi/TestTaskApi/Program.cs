@@ -2,10 +2,9 @@
 using AutoMapper;
 using Microsoft.AspNetCore.Http.Features;
 using TestTaskApi.DataBase;
-using TestTaskApi.Models.Mapping;
 using TestTaskApi.Models.Repository.Variations.SensorRepository;
-using TestTaskApi.Parser.Service;
-using TestTaskApi.Parser.Variation;
+using TestTaskApi.Models.Repository.Variations.SensorValueRepository;
+using TestTaskApi.Parser.Variations;
 
 namespace TestTaskApi
 {
@@ -15,7 +14,7 @@ namespace TestTaskApi
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            //расширил лимит размеров получаемых файлов
+            //expanded the size limit of received files
             builder.Services.Configure<FormOptions>(options =>
             {
                 options.MultipartBodyLengthLimit = 204857600;
@@ -26,13 +25,14 @@ namespace TestTaskApi
             builder.Services.AddSwaggerGen();
             
             builder.Services.AddSingleton<IMongoDb, MongoDbService>();
-            //работаю с данными в через репозитории
-            builder.Services.AddTransient<ISensorRepository, SensorRepository>();
-            
-            builder.Services.AddTransient<IParserService, OneEntityParserService>();
-            builder.Services.AddAutoMapper(typeof(AutoMapperProfile));
+            //work with data through repositories
+            builder.Services.AddScoped<ISensorRepository, SensorRepository>();
+            builder.Services.AddScoped<ISensorValueRepository, SensorValueRepository>();
 
-            //корс в режиме *
+            builder.Services.AddTransient<ISensorParserFromCsvService, SensorParserFromCsvService>();
+
+
+            //cors in mode *
             builder.Services.AddCors(options =>
             {
                 options.AddDefaultPolicy(

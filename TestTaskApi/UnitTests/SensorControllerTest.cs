@@ -8,11 +8,12 @@ using System.Threading.Tasks;
 using TestTaskApi.Controllers;
 using TestTaskApi.DataBase;
 using TestTaskApi.Models.Data;
-using TestTaskApi.Models.Mapping;
+
 using TestTaskApi.Models.Repository.Variations.SensorRepository;
+using TestTaskApi.Models.Repository.Variations.SensorValueRepository;
 using TestTaskApi.Models.Transfer;
-using TestTaskApi.Parser.Service;
-using TestTaskApi.Parser.Variation;
+using TestTaskApi.Parser.Variations;
+
 
 namespace UnitTests
 {
@@ -21,8 +22,9 @@ namespace UnitTests
     {
         private SensorController _controller;
         private  ISensorRepository _sensorRepository; 
-        private IParserService _parser; 
-        private IMapper _mapper;
+        private ISensorValueRepository _sensorValueRepository;
+        private ISensorParserFromCsvService _parser; 
+       
         private IMongoDb _mongoDb;
         private IFormFile MockFile
         {
@@ -47,20 +49,16 @@ namespace UnitTests
         {
             _mongoDb = new MongoDbService("mongodb://localhost/UnitTest");
             _sensorRepository = new SensorRepository(_mongoDb);
-
-            _sensorRepository.ClearAsync().GetAwaiter().GetResult(); 
-
-            var mapperConfig = new MapperConfiguration(cfg =>
-            {
-                cfg.AddProfile<AutoMapperProfile>();
-            });
-            _mapper = mapperConfig.CreateMapper();
+            _sensorValueRepository = new SensorValueRepository(_mongoDb);
             
-            _parser = new OneEntityParserService();
+            _sensorRepository.ClearAsync().GetAwaiter().GetResult();
+            _sensorValueRepository.ClearAsync().GetAwaiter().GetResult();
+
+            _parser = new SensorParserFromCsvService();
             _controller = new SensorController(
                 _sensorRepository,
-                _parser,
-               _mapper
+                _sensorValueRepository,
+                _parser
                 );
         }
         
@@ -100,7 +98,9 @@ namespace UnitTests
                     Sensor_name = "TurbineMonitoring:DH_HS5_HS2_E2_comp",
                     North = 0,
                     East = 0,
-                    Values = new double[] { 0 },
+                    Value1 = 0,
+                    Value2 = 15,
+                    Value_count = 1,
                 }
             };
 
@@ -119,8 +119,10 @@ namespace UnitTests
             {
                 Assert.AreEqual(sensorDtos[i].Sensor_name, resultList[i].Sensor_name, $"Sensor_name not equal on position {i}.");
                 Assert.AreEqual(sensorDtos[i].North, resultList[i].North, $"North not equal on position {i}.");
-                Assert.AreEqual(sensorDtos[i].East, resultList[i].East, $"East not equal on position {i}.");              
-                CollectionAssert.AreEqual(sensorDtos[i].Values, resultList[i].Values, $"Values not equal on position {i}.");
+                Assert.AreEqual(sensorDtos[i].East, resultList[i].East, $"East not equal on position {i}.");
+                Assert.AreEqual(sensorDtos[i].Value1, resultList[i].Value1, $"Value1 not equal on position {i}.");
+                Assert.AreEqual(sensorDtos[i].Value2, resultList[i].Value2, $"Value2 not equal on position {i}.");
+                Assert.AreEqual(sensorDtos[i].Value_count, resultList[i].Value_count, $"Value2 not equal on position {i}.");
             }
         }       
     }

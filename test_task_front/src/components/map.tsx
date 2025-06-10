@@ -3,6 +3,7 @@ import 'leaflet/dist/leaflet.css';
 import { Icon } from 'leaflet';
 import SensorMinDto from '../interfaces/sensor_min_dto';
 import MapSensorPopup from './map_popup';
+import MapSensorToolTip from './map_tooltip';
 const flagIcon = new Icon({
     iconUrl: '/flag.png', 
     iconSize: [35, 35], 
@@ -24,7 +25,8 @@ const SensorsMap = ({
             {
                 sensors.map((i, k) => (
                     <Marker key={k} position={[i.north, i.east]} icon={flagIcon}>
-                       <MapSensorPopup sensorName={i.sensor_name} sensorValues={i.values}/>
+                       <MapSensorPopup sensor={i}/>
+                       <MapSensorToolTip sensorName={i.sensor_name}/>
                     </Marker>
                 ))
             }
