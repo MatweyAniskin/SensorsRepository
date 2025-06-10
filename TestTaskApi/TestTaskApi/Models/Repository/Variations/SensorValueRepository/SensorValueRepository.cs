@@ -13,7 +13,7 @@ namespace TestTaskApi.Models.Repository.Variations.SensorValueRepository
         {
             CreateIndex();
         }
-        //Create index in db to ensure that there is no duplicate data
+        //Create index in db to ensure that there is no duplicate data and add faster execution of requests
         protected void CreateIndex()
         {            
             var existingIndexes = _collection.Indexes.List();
@@ -32,14 +32,14 @@ namespace TestTaskApi.Models.Repository.Variations.SensorValueRepository
             }
            
             var indexKeys = Builders<SensorValues>.IndexKeys
-                    .Ascending(s => s.SensorName)
-                    .Ascending(s => s.DateTime);
+                    .Ascending(sensor => sensor.SensorName)
+                    .Ascending(sensor => sensor.DateTime);
 
             var indexOptions = new CreateIndexOptions { Unique = true };
             _collection.Indexes.CreateOne(new CreateIndexModel<SensorValues>(indexKeys, indexOptions));
         }
 
-        public async Task<SensorValues> GetValuesFromLastDateAsync(string sensorName)
+        public async Task<SensorValues> GetValuesFromLastDateAsync(string sensorName) //Get values data by last date
         {
             var filter = Builders<SensorValues>.Filter.Eq(filter => filter.SensorName, sensorName);
             return await _collection.Find(filter)
@@ -47,7 +47,7 @@ namespace TestTaskApi.Models.Repository.Variations.SensorValueRepository
                 .FirstOrDefaultAsync();
         }
 
-        public async Task<long> GetAllValuesCountAsync(string sensorName)
+        public async Task<long> GetAllValuesCountAsync(string sensorName) //Just get count of all sensor values by sensor name
         {
             var filter = Builders<SensorValues>.Filter.Eq(item => item.SensorName, sensorName);
             return await _collection.CountDocumentsAsync(filter);
